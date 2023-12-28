@@ -59,4 +59,37 @@ class WorkRequestController extends Controller
     {
         return new WorkRequestResource(WorkRequest::findOrFail($id));
     }
+
+    /**
+     * Approve a specific work request.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string $id
+     * @return void
+     */
+    public function approve(Request $request, string $id)
+    {
+        $request->validate([
+            /**
+             * The approval reference number (e.g. PO number) for the work request.
+             * @var string
+             * @example PO-12345
+             */
+            'approval_ref' => 'required|string|max:255',
+        ]);
+
+        $wo = WorkRequest::findOrFail($id);
+
+        if (!$wo->fnz_priced_at) {
+            return response()->json([
+                'message' => 'Work request ('.$wo->ref.') has not been priced yet.',
+            ], 400);
+        }
+
+        $wo->approval_ref = $request->approval_ref;
+        $wo->approved_at = now();
+        $wo->save();
+
+        return new WorkRequestResource($wo);
+    }
 }

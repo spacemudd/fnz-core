@@ -23,6 +23,7 @@ Route::middleware(['auth.api', 'json.response'])->group(function() {
     Route::prefix('v1')->group(function() {
         Route::get('/hello', function() { return 'Hello World'; });
 
+        Route::post('work-requests/{id}/approve', [WorkRequestController::class, 'approve']);
         Route::apiResource('work-requests', WorkRequestController::class)->only('index', 'store', 'show');
     });
 });
