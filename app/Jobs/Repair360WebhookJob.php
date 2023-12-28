@@ -32,10 +32,13 @@ class Repair360WebhookJob implements ShouldQueue
     {
         // Remove when in production
         // Simulate a fake price
-        $this->wr->fnz_price = rand(1,10);
-        $this->wr->fnz_priced_at = now();
-        $this->wr->status = 'available';
-        $this->wr->is_available_qty = 1;
+        foreach ($this->wr->items as $item) {
+            $item->available_qty = $item->required_qty;
+            $item->price = round(rand(1,10), 2);
+            $item->save();
+        }
+        $this->wr->priced_at = now();
+        $this->wr->status = 'completed';
         $this->wr->save();
 
         if ($this->wr->webhook_url_at) {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class WorkRequest extends Model
@@ -15,7 +16,7 @@ class WorkRequest extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'ref',
+        'reference',
         'vin',
         'item_description',
         'item_part_number',
@@ -41,5 +42,15 @@ class WorkRequest extends Model
     public function getFnzPriceAttribute($price)
     {
         return number_format($price, 2);
+    }
+
+    public function setDeadlineAtAttribute($value)
+    {
+        $this->attributes['deadline_at'] = $value ? Carbon::parse($value) : null;
+    }
+
+    public function items()
+    {
+        return $this->hasMany(WorkRequestItem::class);
     }
 }

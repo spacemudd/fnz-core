@@ -13,20 +13,16 @@ return new class extends Migration
     {
         Schema::create('work_requests', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('ref');
+            $table->string('reference');
             $table->string('vin');
-            $table->string('item_description');
-            $table->string('item_part_number');
-            $table->unsignedBigInteger('qty')->default(1);
             $table->string('make')->nullable();
             $table->string('model')->nullable();
             $table->year('year')->nullable();
             $table->string('status')->default('pending');
-            $table->unsignedBigInteger('is_available_qty')->nullable();
-            $table->decimal('fnz_price')->nullable();
-            $table->timestamp('fnz_priced_at')->nullable();
-            $table->timestamp('approval_ref')->nullable();
+            $table->timestamp('deadline_at')->nullable();
+            $table->timestamp('priced_at')->nullable();
             $table->timestamp('approved_at')->nullable();
+            $table->timestamp('approval_ref')->nullable();
             $table->string('webhook_url_at')->nullable();
             $table->timestamps();
         });

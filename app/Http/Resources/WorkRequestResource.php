@@ -16,25 +16,23 @@ class WorkRequestResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'ref' => $this->ref,
+            'reference' => $this->reference,
             'vin' => $this->vin,
-            'item_description' => $this->item_description,
-            'item_part_number' => $this->item_part_number,
-            'qty' => $this->qty,
             'make' => $this->make,
             'model' => $this->model,
             'year' => $this->year,
             /** @var string $content The status are as following: pending, completed, unavailable. */
             'status' => $this->status,
-            /** @var $content If null, the item has not been priced yet. If 0, there is no item available. */
-            'is_available_qty' => $this->is_available_qty,
-            'fnz_price' => $this->fnz_price,
-            /** @var string $content A timestamp of when FNZ priced the item. */
-            'fnz_priced_at' => $this->fnz_priced_at,
-            /** @var string $content A reference ID the requester can use. (e.g. purchase order number) */
-            'approval_ref' => $this->approval_ref,
+            /** @var string $content The timestamp of when the work request must be priced depending on priority. */
+            'deadline_at' => $this->priced_at,
+            /** @var string $content The timestamp of when the item(s) were priced at. */
+            'priced_at' => $this->priced_at,
              /** @var string $content The timestamp of when the requester approved the price. */
             'approved_at' => $this->approved_at,
+            /** @var string $content A reference ID the requester can use. (e.g. purchase order number) */
+            'approval_ref' => $this->approval_ref,
+            /** @var array<array, \App\Http\Resources\WorkRequestItemResource> */
+            'items' => new WorkRequestItemsCollection($this->items),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

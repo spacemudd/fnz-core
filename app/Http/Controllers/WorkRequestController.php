@@ -9,6 +9,7 @@ use App\Http\Resources\WorkRequestResource;
 use App\Jobs\Repair360WebhookJob;
 use App\Models\WorkRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class WorkRequestController extends Controller
 {
@@ -18,7 +19,7 @@ class WorkRequestController extends Controller
      */
     public function index()
     {
-        return new WorkRequestCollection(WorkRequest::paginate(10));
+        return new WorkRequestCollection(WorkRequest::with('items')->paginate(10));
     }
 
     /**
@@ -28,14 +29,45 @@ class WorkRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'ref' => 'required',
-            'vin' => 'required',
-            'item_description' => 'required',
-            'item_part_number' => 'required',
-            'qty' => 'required|numeric',
-            'make' => 'nullable|string|max:255',
-            'model' => 'nullable|string|max:255',
-            'year' => 'nullable|numeric|digits:4',
+            /**
+             * A unique reference ID that can be used by the requester.
+             * @var string
+             * @example CSK19288
+             */
+            'reference' => 'required|string|max:255|unique:work_requests',
+            /**
+             * Required when Make/Model/Year not present.
+             * @var string
+             * @example 1HGCM82633A004352
+             */
+            'vin' => 'required_without:make,model,year|string|max:255',
+            /**
+             * Required when VIN not present.
+             * @var string
+             * @example Honda
+             */
+            'make' => 'nullable|string|max:255|required_without:vin',
+            /**
+             * Required when VIN not present.
+             * @var string
+             * @example Accord
+             */
+            'model' => 'nullable|string|max:255|required_without:vin',
+            /**
+             * Required when VIN not present.
+             * @var int
+             * @example 2024
+             */
+            'year' => 'nullable|numeric|digits:4|required_without:vin',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.part_number' => 'required|string|max:255',
+            'items.*.required_qty' => 'required|numeric|min:1',
+            /**
+             * The date and time by which the work request must be completed at. (UTC time)
+             * @var string
+             * @example 2024-12-31T23:59:59Z
+             */
+            'deadline_at' => 'nullable|date',
             /**
              * The URL at which the system will send a GET request with the work request detail when updated.
              * @var string
@@ -44,12 +76,15 @@ class WorkRequestController extends Controller
             'webhook_url_at' => 'nullable|url',
         ]);
 
-        $wo = WorkRequest::create($request->all());
-        $wo->refresh();
+        DB::beginTransaction();
+        $wr = WorkRequest::create($request->except('items'));
+        $wr->items()->createMany($request->items);
+        $wr->refresh();
+        DB::commit();
 
-        dispatch(new Repair360WebhookJob($wo));
+        dispatch(new Repair360WebhookJob($wr));
 
-        return new WorkRequestResource($wo);
+        return new WorkRequestResource($wr);
     }
 
     /**
@@ -80,9 +115,9 @@ class WorkRequestController extends Controller
 
         $wo = WorkRequest::findOrFail($id);
 
-        if (!$wo->fnz_priced_at) {
+        if (!$wo->priced_at) {
             return response()->json([
-                'message' => 'Work request ('.$wo->ref.') has not been priced yet.',
+                'message' => 'Work request ('.$wo->reference.') has not been priced yet.',
             ], 400);
         }
 
