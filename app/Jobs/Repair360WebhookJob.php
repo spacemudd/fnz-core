@@ -38,6 +38,8 @@ class Repair360WebhookJob implements ShouldQueue
         $this->wr->is_available_qty = 1;
         $this->wr->save();
 
-        Http::get($this->wr->webhook_url_at, $this->wr->refresh());
+        if ($this->wr->webhook_url_at) {
+            Http::get($this->wr->webhook_url_at, $this->wr->refresh());
+        }
     }
 }
